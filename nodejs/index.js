@@ -12,7 +12,7 @@ app.use(cors());
 
 const db = mysql.createPool({
     host: '189.197.187.187',
-    user: 'alumnos',
+    user: 'alumnoss',
     password: 'Alumnos1010$',
     database: 'controlescolar',
 
