@@ -1,7 +1,7 @@
 const express = require('express');
-const mysql = require ('mysql2');
+const mysql = require('mysql2');
 const bodyParser = require('body-parser');
-const cors =require('cors')
+const cors = require('cors');
 
 const app = express();
 const port = 5000;
@@ -9,94 +9,120 @@ const port = 5000;
 app.use(bodyParser.json());
 app.use(cors());
 
-
 const db = mysql.createPool({
     host: '189.197.187.187',
-    user: 'alumnoss',
+    user: 'alumnos',
     password: 'Alumnos1010$',
     database: 'controlescolar',
+});
 
-})
-
-app.get('/' , (req, res)=>{
+app.get('/', (req, res) => {
     res.send("Hola mundo 2");
 });
-app.get('/profesores' , (req, res)=>{
+
+app.get('/main', (req, res) => {
+    res.send("Hola, esta es la pagina principal del servicio");
+});
+
+app.get('/profesores', (req, res) => {
     const sql = 'SELECT * FROM profesores';
-    db.query(sql, (err, result)=>{
-        if(!err){
+    db.query(sql, (err, result) => {
+        if (!err) {
             res.status(200).send(result);
-        }else {
-            res.status(300).send(err);
+        } else {
+            res.status(500).send(err);
         }
-    })
+    });
 });
 
-app.get('/profesor/:id' , (req, res)=>{
-    const identificador = req.params.id;
-    const sql = 'DELETE * FROM profesores WHERE id = ?';
-    db.query(sql,[identificador], (err, result)=>{
-        if(!err){
+app.get('/profesor/nombre/:nombre', (req, res) => {
+    const nombre = req.params.nombre;
+    const sql = 'SELECT * FROM profesores WHERE nombre = ?';
+    db.query(sql, [nombre], (err, result) => {
+        if (!err) {
             res.status(200).send(result);
-        }else {
-            res.status(300).send(err);
-
+        } else {
+            console.error("Error al buscar profesor por nombre:", err);
+            res.status(500).send(err);
         }
-    })
-});
-
-app.get('/profesor' , (req, res)=>{
-    const respuesta = {
-        "id": 5,
-        "nombre": "dagoberto fiscal",
-        "correo": "dago@gmail.com",
-        "direccion": "5 de febrero",
-        "telefono": "6181233848"
-    }
-    res.status(200).send(respuesta);
-    
+    });
 });
 
 
-app.get('/profesor/eliminar/:id' , (req, res)=>{
+app.get('/profesor/:id', (req, res) => {
     const identificador = req.params.id;
     const sql = 'SELECT * FROM profesores WHERE id = ?';
-    db.query(sql,[identificador], (err, result)=>{
-        if(!err){
+    db.query(sql, [identificador], (err, result) => {
+        if (!err) {
             res.status(200).send(result);
-        }else {
-            res.status(300).send(err);
-
+        } else {
+            res.status(500).send(err);
         }
-    })
+    });
 });
 
-
-app. post('/profesor/registrar', (req,res)=>{
-    res.status(200).send('todo bien');
-    console.log(req.body);
-    
-    // const{id ,nombre,correo ,direccion} = req.body;
-    // const sql = 'INSERT INTO profesores VALUES(?,?,?,?)';
-    // db.query(sql, [id, nombre, correo, direccion], (err, resultado)=>{
-    //     if(!err){
-    //         res.status(200).send({
-    //             result,
-    //             mensaje:'Profesor reggistrado',
-    //         })
-    //     }else{
-    //         res.status(300).send({
-    //             err,
-    //             mensaje: 'no se registro el profesor',            })
-    //     }
-    // });
-})
-
-app.all('*',(req,res)=>{
-    res.send("Esta direccion no existe, contacta a tu administrador o provedor")
+app.post('/profesor/registrar', (req, res) => {
+    const { id, nombre, correo, direccion } = req.body;
+    const sql = 'INSERT INTO profesores (id, nombre, correo, direccion) VALUES (?, ?, ?, ?)';
+    db.query(sql, [id, nombre, correo, direccion], (err, result) => {
+        if (!err) {
+            res.status(200).send({
+                result,
+                mensaje: 'Profesor registrado',
+            });
+        } else {
+            res.status(500).send({
+                err,
+                mensaje: 'No se registró el profesor',
+            });
+        }
+    });
 });
 
-app.listen(port, ()=>{
-    console.log("escuchando en el puerto ${port}");
+app.delete('/profesor/eliminar/:id', (req, res) => {
+    const identificador = req.params.id;
+    const sql = 'DELETE FROM profesores WHERE id = ?';
+    db.query(sql, [identificador], (err, result) => {
+        if (!err) {
+            if (result.affectedRows > 0) {
+                res.status(200).send({
+                    result,
+                    mensaje: 'Profesor eliminado',
+                });
+            } else {
+                res.status(404).send({
+                    mensaje: 'Profesor no encontrado',
+                });
+            }
+        } else {
+            console.error("Error deleting profesor:", err);
+            res.status(500).send(err);
+        }
+    });
+}); 
+
+app.put('/profesor/modificar', (req, res) => {
+    const { id, nombre, correo, direccion } = req.body; // Corregir el nombre de la propiedad
+    const sql = 'UPDATE profesores SET nombre = ?, correo = ?, direccion = ? WHERE id = ?'; // Eliminar la coma extra
+    db.query(sql, [nombre, correo, direccion, id], (err, result) => {
+        if (!err) {
+            res.status(200).send({
+                result,
+                mensaje: 'Profesor modificado',
+            });
+        } else {
+            res.status(500).send({
+                err,
+                mensaje: 'No se modificó el profesor',
+            });
+        }
+    });
 });
 
+app.all('*', (req, res) => {
+    res.send("Esta dirección no existe, contacta a tu administrador o proveedor");
+});
+
+app.listen(port, () => {
+    console.log(`Estamos escuchando en el puerto ${port}`);
+});
